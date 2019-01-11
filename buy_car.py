@@ -78,7 +78,7 @@ class guazi_spider(object):
         #print('****************end****************')
 
     def save_MySql(self,sql):
-        connection = pymysql.connect(host='101.132.135.5', user='root', password='Chiju123!', db='bdtp',
+        connection = pymysql.connect(host='localhost', user='root', password='123456', db='scrapydb',
                                      charset='utf8')
         cursor = connection.cursor()
         try:
