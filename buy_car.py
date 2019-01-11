@@ -40,6 +40,8 @@ class guazi_spider(object):
         selector = etree.HTML(raw_html)
         initial = selector.xpath('//ul[@class="brand-letter clearfix search-brand-letter"]//li/text()')
         initial.pop(0)
+        
+        i = 1;
         # setp1先遍历出首字母
         for inita_temp in initial:
             class_name = 'li_spell_' + inita_temp
@@ -49,17 +51,43 @@ class guazi_spider(object):
             # step2 遍历出具体车名
             for item in car_items:
                  car_info = CarInfo()
+                 car_info.car_brand_id = i
                  car_info.car_brand_initial = inita_temp
                  car_info.car_brand_name = item.text.strip().strip('\n')
                  car_info.url = 'https:' + item.attrib['href']
                  self.car_dictionary[car_info.car_brand_name] = car_info
+                 # 保存车品牌信息
+                 save_sql = "insert into pm_car_brand(car_brand_id,car_brand_initial,car_brand_name)values({0},'{1}','{2}')"
+                 save_sql = save_sql.format(car_info.car_brand_id,car_info.car_brand_initial, car_info.car_brand_name)
+                 self.save_MySql(save_sql)
                  # 获取并保存车系信息
-                 
-        print('----end----')
+                 self.save_CarType(car_info)
+                 i = i+1
+                 print('--------' + car_info.car_brand_name)
+    print('----end----')
+
     def save_CarType(self, car_info):
         raw_html = self.get_html(car_info.url)
         selector = etree.HTML(raw_html)
-        car_items = selector.xpath('//ul[@class="brand-cars clearfix"]//dl//dd/a')
+        car_items = selector.xpath('//ul[@class="series-category series-tpg no-float"]//div//li/a')
+        for item in car_items:
+            type_name = item.text.strip()
+            save_sql = "insert into pm_car_train(car_train_name,car_brand_id)values('{0}',{1})"
+            save_sql = save_sql.format(type_name,car_info.car_brand_id)
+            self.save_MySql(save_sql)
+        #print('****************end****************')
+
+    def save_MySql(self,sql):
+        connection = pymysql.connect(host='101.132.135.5', user='root', password='Chiju123!', db='bdtp',
+                                     charset='utf8')
+        cursor = connection.cursor()
+        try:
+            cursor.execute(sql)
+            connection.commit()
+        except Exception as e:
+            print(e)
+            connection.rollback()
+        connection.close()
 
     def get_PageNumber(self):
         url = 'https://www.xin.com/shanghai/s/'
